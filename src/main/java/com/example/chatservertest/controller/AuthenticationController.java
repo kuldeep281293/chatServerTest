@@ -1,5 +1,7 @@
 package com.example.chatservertest.controller;
 
+import com.example.chatservertest.model.Token;
+import com.example.chatservertest.repository.TokenRepository;
 import com.example.chatservertest.security.JwtTokenProvider;
 import lombok.extern.log4j.Log4j;
 import lombok.extern.log4j.Log4j2;
@@ -29,6 +31,9 @@ public class AuthenticationController {
     @Autowired
     private AuthenticationManager authenticationManager;
 
+    @Autowired
+    private TokenRepository tokenRepository;
+
     @PostMapping("/auth/login")
     public Map<String, String> login(@RequestBody Map<String, String> user) {
         try {
@@ -41,6 +46,7 @@ public class AuthenticationController {
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             String token = tokenProvider.createToken(username, 600000L);  // Check for any issues in token generation
+            tokenRepository.save(new Token(null, username, token));
 
             Map<String, String> response = new HashMap<>();
             response.put("username", username);

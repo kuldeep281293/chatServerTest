@@ -1,21 +1,21 @@
 package com.example.chatservertest.model;
 
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 
 @Entity
-@Table(name = "messages")
+@Data
 public class Message {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
+    private String username;
     private String content;
-    private Timestamp timestamp;
+    private LocalDateTime timestamp = LocalDateTime.now();
 
-    @ManyToOne
-    private User user;  // Link to the user who sent the message
-
-    // Standard getters and setters
 }
+

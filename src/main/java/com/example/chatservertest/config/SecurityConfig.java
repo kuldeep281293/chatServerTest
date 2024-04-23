@@ -44,10 +44,11 @@ public class SecurityConfig {
         http
                 .cors().and()
                 .csrf().disable()
+                .headers().frameOptions().disable().and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
-                .requestMatchers("/auth/login", "/error").permitAll()  // Allow anonymous access to error endpoint as well
+                .requestMatchers("/auth/login", "/error","/h2-console/**","/**").permitAll()  // Allow anonymous access to error endpoint as well
                 .anyRequest().authenticated()
                 .and()
                 .apply(new JwtConfigurer(jwtTokenProvider));
@@ -61,10 +62,11 @@ public class SecurityConfig {
         // Apply the JwtConfigurer to HttpSecurity
         http
                 .csrf().disable()
+                .headers().frameOptions().disable().and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
-                .requestMatchers("/auth/login").permitAll()
+                .requestMatchers("/auth/login","/h2-console/**","/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .apply(new JwtConfigurer(jwtTokenProvider));
