@@ -1,6 +1,8 @@
 package com.example.chatservertest.config;
 
 import com.example.chatservertest.security.JwtTokenProvider;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,40 +21,35 @@ import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
+@Log4j2
 public class SecurityConfig {
 
-    @Bean
-    public JwtTokenProvider jwtTokenProvider() {
-        return new JwtTokenProvider(); // Assuming the JwtTokenProvider constructor handles configuration
-    }
+    @Autowired
+    JwtTokenProvider jwtTokenProvider;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("*"));  // Allow all origins
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));  // Allow all methods
-        configuration.setAllowedHeaders(Arrays.asList("authorization", "content-type", "x-auth-token"));  // Allow specific headers
+        configuration.addAllowedOrigin("http://localhost:63342");
+        configuration.addAllowedOrigin("http://localhost:8080");// Specify the port if needed
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("authorization", "content-type", "x-auth-token"));
+        configuration.setAllowCredentials(true);
         configuration.setExposedHeaders(Arrays.asList("x-auth-token"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
-
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, JwtTokenProvider jwtTokenProvider) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        log.info("filterChain mein aaya");
         http
                 .cors().and()
                 .csrf().disable()
-                .headers().frameOptions().disable().and()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
                 .authorizeRequests()
-                .requestMatchers("/auth/login", "/error","/h2-console/**","/**").permitAll()  // Allow anonymous access to error endpoint as well
-                .anyRequest().authenticated()
-                .and()
-                .apply(new JwtConfigurer(jwtTokenProvider));
-
+                .anyRequest().permitAll(); // Permit all requests without authentication
+        http.headers().frameOptions().disable();
         return http.build();
     }
 
@@ -60,16 +57,13 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authManager(HttpSecurity http, JwtTokenProvider jwtTokenProvider) throws Exception {
         // Apply the JwtConfigurer to HttpSecurity
+        log.info("authManager mein aaya");
         http
+                .cors().and()
                 .csrf().disable()
-                .headers().frameOptions().disable().and()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
                 .authorizeRequests()
-                .requestMatchers("/auth/login","/h2-console/**","/**").permitAll()
-                .anyRequest().authenticated()
-                .and()
-                .apply(new JwtConfigurer(jwtTokenProvider));
+                .anyRequest().permitAll(); // Permit all requests without authentication
+
 
         // Return the AuthenticationManager from HttpSecurity
         return http.getSharedObject(AuthenticationManagerBuilder.class).build();
@@ -79,5 +73,7 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+
 
 }

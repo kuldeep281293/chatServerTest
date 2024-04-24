@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Test with SockJS and STOMP</title>
+    <style>
+        #loginArea { margin-bottom: 20px; }
+        #messageArea {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: scroll;
+        }
+        #inputArea { margin-top: 10px; }
+        .username { font-weight: bold; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script>
+        var stompClient = null;
+        var username = null;
+
+        function connectWebSocket(token) {
+            const socket = new SockJS(`http://localhost:8080/ws?token=${token}`);
+            stompClient = Stomp.over(socket);
+
+            stompClient.connect({}, function(frame) {
+                console.log('Connected: ' + frame);
+                // Subscribe to the topics only once per session
+                subscribeToTopics();
+                // Request chat history only once per session right after connecting
+                stompClient.send("/app/chat.history", {}, JSON.stringify({}));
+                displaySystemMessage(username + " joined"); // Announce only once
+            }, function(error) {
+                console.error('STOMP error: ', error);
+            });
+        }
+
+        function subscribeToTopics() {
+            stompClient.subscribe('/topic/public', function(messageOutput) {
+                displayMessage(JSON.parse(messageOutput.body));
+            });
+            // Handle history separately
+            stompClient.subscribe('/topic/history', function(messageOutput) {
+                JSON.parse(messageOutput.body).forEach(msg => displayMessage(msg));
+            });
+        }
+
+        function sendMessage() {
+            var messageContent = document.getElementById('messageInput').value.trim();
+            if (messageContent && stompClient) {
+                var chatMessage = {
+                    content: messageContent,
+                    username: username
+                };
+                stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
+                document.getElementById('messageInput').value = '';
+            }
+        }
+
+        function displayMessage(message) {
+            var messageContainer = document.getElementById('messageArea');
+            var messageElement = document.createElement('div');
+            messageElement.innerHTML = `<span class="username">${message.username}</span>: ${message.content}`;
+            messageContainer.appendChild(messageElement);
+        }
+
+        function displaySystemMessage(content) {
+            var messageContainer = document.getElementById('messageArea');
+            var messageElement = document.createElement('div');
+            messageElement.innerHTML = `System: ${content}`;
+            messageContainer.appendChild(messageElement);
+        }
+
+        function login() {
+            var user = document.getElementById('username').value;
+            var pass = document.getElementById('password').value;
+
+            fetch('http://localhost:8080/auth/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: user, password: pass})
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Login failed');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    username = user;
+                    connectWebSocket(data.token);
+                })
+                .catch(error => {
+                    console.error('Error logging in:', error);
+                    alert("Login failed: " + error.message);
+                });
+        }
+    </script>
+</head>
+<body>
+<h1>WebSocket Test with SockJS and STOMP</h1>
+<div id="loginArea">
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+</div>
+<div id="messageArea"></div>
+<div id="inputArea">
+    <input type="text" id="messageInput" placeholder="Type a message...">
+    <button onclick="sendMessage()">Send</button>
+</div>
+</body>
+</html>

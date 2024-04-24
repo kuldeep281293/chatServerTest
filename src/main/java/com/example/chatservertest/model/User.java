@@ -1,7 +1,8 @@
 package com.example.chatservertest.model;
 
-import jakarta.persistence.*;
 import lombok.Data;
+
+import javax.persistence.*;
 
 @Entity
 @Table(name = "users")

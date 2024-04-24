@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Test with SockJS and STOMP</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script>
+        var stompClient = null;
+
+        function connectWebSocket() {
+            const token = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyMiIsImlhdCI6MTcxMzk1MzkzMSwiZXhwIjoxNzE0MDQwMzMxfQ.JHEfL7_unKz-OQNeRA3kVC5xF78cLFzYHYv4Fke3Woo'; // Update with actual JWT token
+            const socket = new SockJS('http://localhost:8080/ws?token=' + token);
+            stompClient = Stomp.over(socket);
+
+            stompClient.connect({}, function(frame) {
+                console.log('Connected: ' + frame);
+                subscribeToTopics();
+            }, function(error) {
+                console.error('STOMP error: ', error);
+            });
+        }
+
+        function subscribeToTopics() {
+            // Subscription to the public topic to receive chat messages
+            stompClient.subscribe('/topic/public', function(messageOutput) {
+                displayMessage(JSON.parse(messageOutput.body));
+            });
+
+            // Request chat history after successful subscription
+            requestChatHistory();
+        }
+
+        function sendMessage() {
+            var messageContent = document.getElementById('messageInput').value.trim();
+            if (messageContent && stompClient) {
+                var chatMessage = {
+                    content: messageContent,
+                    sender: 'username', // Update or fetch dynamically as needed
+                    type: 'CHAT'
+                };
+                stompClient.send("/app/chat.send", {}, JSON.stringify(chatMessage));
+                document.getElementById('messageInput').value = '';
+            }
+        }
+
+        function displayMessage(message) {
+            var messageContainer = document.getElementById('messageArea');
+            var messageElement = document.createElement('div');
+            messageElement.innerHTML = message.content + " (from " + message.sender + ")";
+            messageContainer.appendChild(messageElement);
+        }
+
+        function requestChatHistory() {
+            if (stompClient) {
+                stompClient.send("/app/chat.history", {}, JSON.stringify({request: 'history'}));
+            }
+        }
+    </script>
+</head>
+<body>
+<h1>WebSocket Test with SockJS and STOMP</h1>
+<div id="messageArea"></div>
+<input type="text" id="messageInput" placeholder="Type a message...">
+<button onclick="sendMessage()">Send</button>
+<button onclick="connectWebSocket()">Connect WebSocket</button>
+<button onclick="requestChatHistory()">Request History</button>
+</body>
+</html>

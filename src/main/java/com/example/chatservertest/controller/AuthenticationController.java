@@ -45,8 +45,14 @@ public class AuthenticationController {
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            String token = tokenProvider.createToken(username, 600000L);  // Check for any issues in token generation
-            tokenRepository.save(new Token(null, username, token));
+            String token = tokenProvider.createToken(username, 86400000l);
+            Token existingToken = tokenRepository.findByUsername(username)
+                    .orElse(new Token()); // Use the Token class constructor
+
+            existingToken.setUsername(username);
+            existingToken.setToken(token);
+
+            tokenRepository.save(existingToken); // This will update if exists, or save a new one otherwise
 
             Map<String, String> response = new HashMap<>();
             response.put("username", username);

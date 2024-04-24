@@ -3,6 +3,7 @@ package com.example.chatservertest.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -11,11 +12,13 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Date;
 import java.util.function.Function;
 
 @Component
+@Log4j2
 public class JwtTokenProvider {
 
     @Value("${jwt.secret}")
@@ -30,11 +33,12 @@ public class JwtTokenProvider {
                 .setClaims(claims)
                 .setIssuedAt(now)
                 .setExpiration(validity)
-                .signWith(SignatureAlgorithm.HS256, secretKey)
+                .signWith(SignatureAlgorithm.HS256, secretKey.getBytes(StandardCharsets.UTF_8))
                 .compact();
     }
 
     public boolean validateToken(String token) {
+        log.info("Validatiing here : {}",token);
         return !isTokenExpired(token);
     }
 
@@ -44,15 +48,22 @@ public class JwtTokenProvider {
     }
 
     private Claims getAllClaimsFromToken(String token) {
-        return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody();
+        try {
+            return Jwts.parser().setSigningKey(secretKey.getBytes(StandardCharsets.UTF_8)).parseClaimsJws(token).getBody();
+        } catch (Exception e) {
+            log.error("Error parsing claims from token: {}", e.getMessage());
+            throw e;
+        }
     }
 
-    private String getUsernameFromToken(String token) {
+
+    public String getUsernameFromToken(String token) {
         return getAllClaimsFromToken(token).getSubject();
     }
 
     private boolean isTokenExpired(String token) {
         final Date expiration = getAllClaimsFromToken(token).getExpiration();
+        log.info("Checking if token is expired :{}", expiration.before(new Date()));
         return expiration.before(new Date());
     }
 }

@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -38,6 +39,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if (parts.length < 2) {
             throw new IllegalArgumentException("User details must be in the format username:password");
         }
-        return new User(parts[0], parts[1], List.of(new SimpleGrantedAuthority("USER")));
+        return new User(parts[0], parts[1], Collections.singletonList(new SimpleGrantedAuthority("USER")));
     }
 }
