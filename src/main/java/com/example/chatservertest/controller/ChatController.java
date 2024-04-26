@@ -35,13 +35,10 @@ public class ChatController {
         String token = (String) headerAccessor.getSessionAttributes().get("token");
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
-            // Extract username from token
             String username = jwtTokenProvider.getUsernameFromToken(token);
 
-            // Set the username to the message
             message.setUsername(username);
 
-            // Save the message with the username to the database
             messageRepository.save(message);
             return message;
         } else {

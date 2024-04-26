@@ -43,7 +43,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        log.info("filterChain mein aaya");
+
         http
                 .cors().and()
                 .csrf().disable()
@@ -57,7 +57,7 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authManager(HttpSecurity http, JwtTokenProvider jwtTokenProvider) throws Exception {
         // Apply the JwtConfigurer to HttpSecurity
-        log.info("authManager mein aaya");
+
         http
                 .cors().and()
                 .csrf().disable()

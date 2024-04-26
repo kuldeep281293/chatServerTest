@@ -37,7 +37,7 @@ public class AuthenticationController {
     @PostMapping("/auth/login")
     public Map<String, String> login(@RequestBody Map<String, String> user) {
         try {
-            log.debug("Attempting to authenticate user: {}", user.get("username"));
+            //log.debug("Attempting to authenticate user: {}", user.get("username"));
 
             String username = user.get("username");
             String password = user.get("password");

@@ -25,13 +25,13 @@ public class HttpHandshakeInterceptor implements HandshakeInterceptor {
     public boolean beforeHandshake(
             ServerHttpRequest request, ServerHttpResponse response,
             WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
-        log.info("idhar aaya");
+
         if (request instanceof ServletServerHttpRequest) {
             ServletServerHttpRequest servletRequest = (ServletServerHttpRequest) request;
             String token = servletRequest.getServletRequest().getParameter("token");
 
             if (token != null && jwtTokenProvider.validateToken(token)) {
-                // Put the username and token on the WebSocket session attributes
+
                 Authentication auth = jwtTokenProvider.getAuthentication(token);
                 attributes.put("username", auth.getName());
                 attributes.put("token", token);
