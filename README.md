@@ -1,7 +1,7 @@
 # Chat Server System
 
 ## Overview
-This chat server system enables users to join a chat room, send messages, and access chat history. This solution focuses on server-side development, utilizing WebSocket for real-time communication and a RESTful API for message handling.
+This chat server system enables users to join a chat room, send messages, and access chat history. This solution focuses on server-side development, utilizing WebSocket for real-time communication and a RESTful API for login.
 
 ## Features
 - User authentication (basic username/password).
