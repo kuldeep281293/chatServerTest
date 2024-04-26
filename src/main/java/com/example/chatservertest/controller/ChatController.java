@@ -3,19 +3,24 @@ package com.example.chatservertest.controller;
 import com.example.chatservertest.model.Message;
 import com.example.chatservertest.repository.MessageRepository;
 import com.example.chatservertest.security.JwtTokenProvider;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Controller
+@Log4j2
 public class ChatController {
     @Autowired
     private MessageRepository messageRepository;
@@ -65,16 +70,12 @@ public class ChatController {
     }
 
     @MessageMapping("/chat.history")
-    public void getHistory(SimpMessageHeaderAccessor headerAccessor) {
-        String token = (String) headerAccessor.getSessionAttributes().get("token");
-        if (token != null && jwtTokenProvider.validateToken(token)) {
-            String username = jwtTokenProvider.getUsernameFromToken(token);
-            List<Message> history = messageRepository.findAll().stream()
-                    .filter(message -> !message.isDeleted())
-                    .collect(Collectors.toList());
-            // Send the history to a user-specific topic
-            headerAccessor.getSession().send("/topic/history-" + username, history);
-        }
+    @SendTo("/topic/history")
+    public List<Message> getHistory() {
+
+        return messageRepository.findAll().stream()
+                .filter(message -> !message.isDeleted())
+                .collect(Collectors.toList());
     }
 
 }

@@ -27,7 +27,11 @@
       stompClient.subscribe('/topic/public', function(messageOutput) {
         displayMessage(JSON.parse(messageOutput.body));
       });
-      requestChatHistory();
+      // Correct subscription to the user-specific topic
+      stompClient.subscribe('/user/topic/history', function(messageOutput) {  // Spring prefixes user-specific topics with '/user'
+        JSON.parse(messageOutput.body).forEach(msg => displayMessage(msg));
+        displaySystemMessage(username + " joined"); // Announce only once after loading history
+      });
     }
 
     function sendMessage() {

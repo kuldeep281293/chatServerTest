@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <title>WebSocket Test with SockJS and STOMP</title>
   <style>
-    #loginArea {
-      margin-bottom: 20px;
-    }
+    #loginArea { margin-bottom: 20px; }
     #messageArea {
       margin-top: 20px;
       border: 1px solid #ccc;
@@ -14,12 +12,8 @@
       height: 300px;
       overflow-y: scroll;
     }
-    #inputArea {
-      margin-top: 10px;
-    }
-    .username {
-      font-weight: bold;
-    }
+    #inputArea { margin-top: 10px; }
+    .username { font-weight: bold; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
@@ -30,10 +24,9 @@
     function connectWebSocket(token) {
       const socket = new SockJS(`http://localhost:8080/ws?token=${token}`);
       stompClient = Stomp.over(socket);
-
       stompClient.connect({}, function(frame) {
         console.log('Connected: ' + frame);
-        requestChatHistory(); // Request history right after successful connection.
+        requestChatHistoryExplicitly();
         subscribeToTopics();
       }, function(error) {
         console.error('STOMP error: ', error);
@@ -42,8 +35,28 @@
 
     function subscribeToTopics() {
       stompClient.subscribe('/topic/public', function(messageOutput) {
-        handleIncomingMessages(JSON.parse(messageOutput.body));
+        displayMessage(JSON.parse(messageOutput.body));
       });
+      stompClient.subscribe('/topic/history', function(messageOutput) {
+        console.log('History data received:', messageOutput);
+        var messages = JSON.parse(messageOutput.body);
+        messages.forEach(msg => displayMessage(msg));
+        displaySystemMessage(`${username} joined`); // Display this after loading the history
+      });
+
+    }
+    function displaySystemMessage(content) {
+      var messageContainer = document.getElementById('messageArea');
+      var messageElement = document.createElement('div');
+      messageElement.innerHTML = `System: ${content}`;
+      messageContainer.appendChild(messageElement);
+    }
+
+
+    function requestChatHistoryExplicitly() {
+      if (stompClient) {
+        stompClient.send("/app/chat.history", {}, JSON.stringify({}));
+      }
     }
 
     function sendMessage() {
@@ -58,14 +71,6 @@
       }
     }
 
-    function handleIncomingMessages(message) {
-      if (Array.isArray(message)) {
-        message.forEach(msg => displayMessage(msg));
-      } else {
-        displayMessage(message);
-      }
-    }
-
     function displayMessage(message) {
       var messageContainer = document.getElementById('messageArea');
       var messageElement = document.createElement('div');
@@ -73,23 +78,9 @@
       messageContainer.appendChild(messageElement);
     }
 
-    function displaySystemMessage(content) {
-      var messageContainer = document.getElementById('messageArea');
-      var messageElement = document.createElement('div');
-      messageElement.innerHTML = `System: ${content}`;
-      messageContainer.appendChild(messageElement);
-    }
-
-    function requestChatHistory() {
-      if (stompClient) {
-        stompClient.send("/app/chat.history", {}, JSON.stringify({request: 'history'}));
-      }
-    }
-
     function login() {
       var user = document.getElementById('username').value;
       var pass = document.getElementById('password').value;
-
       fetch('http://localhost:8080/auth/login', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -104,7 +95,6 @@
               .then(data => {
                 username = user;
                 connectWebSocket(data.token);
-                displaySystemMessage(`${username} joined`); // Display user joined after login and connection.
               })
               .catch(error => {
                 console.error('Error logging in:', error);

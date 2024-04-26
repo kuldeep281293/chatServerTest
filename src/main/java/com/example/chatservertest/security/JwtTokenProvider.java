@@ -15,7 +15,6 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Date;
-import java.util.function.Function;
 
 @Component
 @Log4j2
@@ -38,7 +37,6 @@ public class JwtTokenProvider {
     }
 
     public boolean validateToken(String token) {
-        log.info("Validatiing here : {}",token);
         return !isTokenExpired(token);
     }
 
